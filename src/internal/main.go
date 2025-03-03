@@ -4,15 +4,11 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-
-	core "ARQ.HEX/src/core"
-
-	notasDeps "ARQ.HEX/src/internal/notas/infrastructure/dependencies"
-	recordatoriosDeps "ARQ.HEX/src/internal/recordatorio/infrastructure/dependencies"
+	"ARQ.HEX/src/core"
+	"ARQ.HEX/src/internal/notas/infrastructure/dependencies/routes"
 )
 
 func main() {
-	// Conectar a la base de datos
 	db, err := core.ConnectDB()
 	if err != nil {
 		log.Fatal("Error al conectar a la base de datos:", err)
@@ -21,13 +17,11 @@ func main() {
 
 	r := gin.Default()
 
-	notasDependencies := notasDeps.NewNotasDependencies(db)
-	notasRouter := notasDependencies.GetRoutes()
-	notasRouter.AttachRoutes(r)
+	deps := &routes.NotasDependencies{
+		DB: db,
+	}
 
-	recordatoriosDependencies := recordatoriosDeps.NewRecordatoriosDependencies(db)
-	recordatoriosRouter := recordatoriosDependencies.GetRoutes()
-	recordatoriosRouter.AttachRoutes(r)
+	routes.RegisterNoteRoutes(r, deps) 
 
 	log.Println("Servidor corriendo en http://localhost:8080")
 	r.Run(":8080")

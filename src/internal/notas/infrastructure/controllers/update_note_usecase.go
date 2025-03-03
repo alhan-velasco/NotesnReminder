@@ -26,7 +26,7 @@ func (c *UpdateNoteController) Update(ctx *gin.Context) {
 	}
 
 	var request struct {
-		Title   string `json:"title"`
+		Title string `json:"title"`
 		Content string `json:"content"`
 	}
 
@@ -37,7 +37,7 @@ func (c *UpdateNoteController) Update(ctx *gin.Context) {
 
 	note := entities.Note{
 		ID: int(id),
-		Title:  request.Title,
+		Title: request.Title,
 		Content: request.Content,
 	}
 

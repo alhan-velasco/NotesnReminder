@@ -1,41 +1,50 @@
 package routes
 
 import (
-	"github.com/gin-gonic/gin"
+	"ARQ.HEX/src/internal/notas/application"
+	"ARQ.HEX/src/internal/notas/application/services"
 	"ARQ.HEX/src/internal/notas/infrastructure/controllers"
+	"ARQ.HEX/src/internal/notas/infrastructure/handlers"
+	"ARQ.HEX/src/internal/notas/infrastructure/dependencies/repository"
+	"github.com/gin-gonic/gin"
+	"database/sql"
 )
 
-type NoteRoutes struct {
-	CreateNoteController  *controllers.CreateNoteController
-	GetAllNotesController *controllers.GetNotesController
-	GetNoteByIDController *controllers.GetNoteByIDController
-	UpdateNoteController  *controllers.UpdateNoteController
-	DeleteNoteController  *controllers.DeleteNoteController
+type NotasDependencies struct {
+	DB *sql.DB
 }
 
-func NewNoteRoutes(
-	createNoteController *controllers.CreateNoteController,
-	getAllNotesController *controllers.GetNotesController,
-	getNoteByIDController *controllers.GetNoteByIDController,
-	updateNoteController *controllers.UpdateNoteController,
-	deleteNoteController *controllers.DeleteNoteController,
-) *NoteRoutes {
-	return &NoteRoutes{
-		CreateNoteController:  createNoteController,
-		GetAllNotesController: getAllNotesController,
-		GetNoteByIDController: getNoteByIDController,
-		UpdateNoteController:  updateNoteController,
-		DeleteNoteController:  deleteNoteController,
-	}
+func NewNotasDependencies(db *sql.DB) *NotasDependencies {
+	return &NotasDependencies{DB: db}
 }
 
-func (r *NoteRoutes) AttachRoutes(router *gin.Engine) {
+func RegisterNoteRoutes(router *gin.Engine, d *NotasDependencies) {
+	notaRepo := repository.NewNoteRepositoryImpl(d.DB)  
+
+	noteService := services.NewNoteService(notaRepo)
+
+	createNoteUseCase := application.NewCreateNoteUseCase(notaRepo)
+	getAllNotesUseCase := application.NewGetNotesUseCase(notaRepo)
+	getNoteByIDUseCase := application.NewGetNoteByIDUseCase(notaRepo)
+	updateNoteUseCase := application.NewUpdateNoteUseCase(notaRepo)
+	deleteNoteUseCase := application.NewDeleteNoteUseCase(notaRepo)
+
+	createNoteController := controllers.NewCreateNoteController(createNoteUseCase)
+	getAllNotesController := controllers.NewGetNotesController(getAllNotesUseCase)
+	getNoteByIDController := controllers.NewGetNoteByIDController(getNoteByIDUseCase)
+	updateNoteController := controllers.NewUpdateNoteController(updateNoteUseCase)
+	deleteNoteController := controllers.NewDeleteNoteController(deleteNoteUseCase)
+
 	notesGroup := router.Group("/notes")
 	{
-		notesGroup.POST("", r.CreateNoteController.Create)
-		notesGroup.GET("", r.GetAllNotesController.GetAll)
-		notesGroup.GET("/:id", r.GetNoteByIDController.GetByID)
-		notesGroup.PUT("/:id", r.UpdateNoteController.Update)
-		notesGroup.DELETE("/:id", r.DeleteNoteController.Delete)
+		notesGroup.POST("", createNoteController.Create)
+		notesGroup.GET("", getAllNotesController.GetAll)
+		notesGroup.GET("/:id", getNoteByIDController.GetByID)
+		notesGroup.PUT("/:id", updateNoteController.Update)
+		notesGroup.DELETE("/:id", deleteNoteController.Delete)
+
+		notesGroup.GET("/new", handlers.GetNewNote(*noteService))
+		notesGroup.GET("/deleted", handlers.GetDeletedNotes(*noteService))
+		notesGroup.GET("/for-deletion", handlers.WaitForNoteDeletion(*noteService))
 	}
 }
