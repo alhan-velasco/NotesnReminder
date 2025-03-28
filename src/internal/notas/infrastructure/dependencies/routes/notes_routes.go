@@ -46,5 +46,6 @@ func RegisterNoteRoutes(router *gin.Engine, d *NotasDependencies) {
 		notesGroup.GET("/new", handlers.GetNewNote(*noteService))
 		notesGroup.GET("/deleted", handlers.GetDeletedNotes(*noteService))
 		notesGroup.GET("/for-deletion", handlers.WaitForNoteDeletion(*noteService))
+		notesGroup.GET("/wait-for-new", handlers.WaitForNewNote(*noteService))
 	}
 }
